@@ -55,7 +55,7 @@ def load_data(directory):
 def main():
     if len(sys.argv) > 2:
         sys.exit("Usage: python degrees.py [directory]")
-    directory = sys.argv[1] if len(sys.argv) == 2 else "large"
+    directory = sys.argv[1] if len(sys.argv) == 2 else "small"
 
     # Load data from files into memory
     print("Loading data...")
@@ -91,9 +91,35 @@ def shortest_path(source, target):
 
     If no possible path, returns None.
     """
+    root_node = Node(source, None, None)
+    queue = QueueFrontier()
+    queue.add(root_node)
+    has_visited = set()
+    nodes = [root_node]  # Keep track of the reference to the Nodes to avoid GC
 
-    # TODO
-    raise NotImplementedError
+    while not queue.empty():
+        new_queue = QueueFrontier()
+        for person in queue.frontier:
+            neighbors = neighbors_for_person(person.state)
+            for neighbor in neighbors:
+                if neighbor[1] == target:
+                    # found the target
+                    final_node = Node(neighbor[1], person, neighbor[0])
+                    path = generate_path_from_final(final_node)
+                    return path
+                elif neighbor[1] not in has_visited:
+                    # found a new node
+                    new_node = Node(neighbor[1], person, neighbor[0])
+                    has_visited.add(new_node.state)
+                    new_queue.add(new_node)
+                    nodes.append(new_node)
+                else:
+                    # already visited node
+                    pass
+        queue = new_queue
+
+    # no possible path
+    return None
 
 
 def person_id_for_name(name):
@@ -133,6 +159,16 @@ def neighbors_for_person(person_id):
         for person_id in movies[movie_id]["stars"]:
             neighbors.add((movie_id, person_id))
     return neighbors
+
+
+def generate_path_from_final(final_node):
+    res = []
+    current_node = final_node
+    while current_node.parent is not None:
+        res.append((current_node.action, current_node.state))
+        current_node = current_node.parent
+    res.reverse()
+    return res
 
 
 if __name__ == "__main__":
